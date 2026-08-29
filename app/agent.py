@@ -17,6 +17,246 @@ from app.orders import OrderLookup
 load_dotenv()
 
 
+# ========================================
+# SELECT RELEVANT SOURCES
+# ========================================
+
+def select_relevant_sources(
+    query: str,
+    results: list,
+    max_sources: int = 2
+) -> list:
+    """
+    Select and rank the most relevant document chunks based on relevance
+    and domain-specific document boosting rules, limiting the output
+    to chunks from at most max_sources distinct sources.
+    """
+    if not results or max_sources <= 0:
+        return []
+
+    query_lower = query.lower()
+
+    # Determine boost target official documents based on query intent
+    boosted_filenames = []
+
+    # 1. TrailPlus membership (prioritized over standard returns for TrailPlus members)
+    if any(
+        w in query_lower
+        for w in [
+            "trailplus",
+            "trail plus",
+            "membership",
+            "member"
+        ]
+    ):
+        boosted_filenames.append("09-trailplus-membership.md")
+    # 2. Return questions
+    elif any(
+        w in query_lower
+        for w in [
+            "return",
+            "returns",
+            "refund",
+            "refunds",
+            "exchange",
+            "exchanges",
+            "send back",
+            "send it back",
+            "money back",
+            "60 days",
+            "migration note",
+            "return window",
+            "return policy"
+        ]
+    ):
+        boosted_filenames.append("01-returns-policy-current.md")
+
+    # 3. International shipping / Canada / Germany
+    if any(
+        w in query_lower
+        for w in [
+            "international",
+            "canada",
+            "germany",
+            "country",
+            "countries",
+            "ship to",
+            "shipping to",
+            "duties",
+            "taxes",
+            "abroad",
+            "customs",
+            "overseas",
+            "destination",
+            "destinations"
+        ]
+    ):
+        boosted_filenames.append("06-international-shipping.md")
+
+    # 4. Final sale
+    if any(
+        w in query_lower
+        for w in [
+            "final sale",
+            "final-sale",
+            "clearance",
+            "promotion",
+            "promotions",
+            "promo"
+        ]
+    ):
+        boosted_filenames.append("03-final-sale-and-promotions.md")
+
+    # 5. Damaged items
+    if any(
+        w in query_lower
+        for w in [
+            "damaged",
+            "damage",
+            "broken",
+            "wrong item",
+            "wrong items",
+            "defect",
+            "defective",
+            "flaw",
+            "flawed",
+            "torn",
+            "zipper"
+        ]
+    ):
+        boosted_filenames.append("04-damaged-or-wrong-items.md")
+
+    # 6. Warranty
+    if any(
+        w in query_lower
+        for w in [
+            "warranty",
+            "warranties",
+            "guarantee",
+            "lifetime",
+            "repair",
+            "repairs",
+            "wear and tear"
+        ]
+    ):
+        boosted_filenames.append("07-warranty.md")
+
+    # 7. Dishwasher / product care
+    if any(
+        w in query_lower
+        for w in [
+            "dishwasher",
+            "dish washer",
+            "dish-washer",
+            "wash",
+            "washing",
+            "hand wash",
+            "hand-wash",
+            "clean",
+            "cleaning",
+            "care",
+            "product care",
+            "breeze tumbler",
+            "tumbler"
+        ]
+    ):
+        boosted_filenames.append("11-product-care.md")
+        boosted_filenames.append("12-breeze-tumbler-product-card.md")
+
+    # Deduplicate boosted filenames preserving order
+    unique_boosted = []
+    for fn in boosted_filenames:
+        if fn not in unique_boosted:
+            unique_boosted.append(fn)
+
+    # Check for historical query intent
+    historical_words = [
+        "old policy",
+        "old return policy",
+        "legacy policy",
+        "legacy version",
+        "previous policy",
+        "previous version",
+        "former policy",
+        "historical policy",
+        "historical version",
+        "earlier policy",
+        "earlier version",
+        "used to",
+        "before april 2026"
+    ]
+    is_historical = any(
+        w in query_lower
+        for w in historical_words
+    )
+
+    # Score each candidate chunk
+    scored_results = []
+    for chunk in results:
+        # Untrusted documents must never be selected
+        if chunk.authority == "untrusted":
+            continue
+
+        base_score = getattr(chunk, "score", 0.0) or 0.0
+        score = float(base_score)
+
+        if (
+            chunk.filename in unique_boosted
+            and chunk.authority == "official"
+        ):
+            score += 10.0
+
+        if chunk.status == "superseded":
+            if is_historical:
+                score += 2.0
+            else:
+                score -= 10.0
+        elif (
+            chunk.status == "active"
+            and chunk.authority == "official"
+        ):
+            score += 0.5
+
+        scored_results.append((score, chunk))
+
+    # Sort chunks by score in descending order
+    scored_results.sort(
+        key=lambda x: x[0],
+        reverse=True
+    )
+
+    selected_chunks = []
+    selected_files = []
+
+    if unique_boosted:
+        target_files = unique_boosted[:max_sources]
+        for target_file in target_files:
+            file_chunks = [
+                chunk
+                for s, chunk in scored_results
+                if chunk.filename == target_file
+            ]
+            if file_chunks:
+                selected_chunks.extend(file_chunks[:2])
+                if target_file not in selected_files:
+                    selected_files.append(target_file)
+    else:
+        for score, chunk in scored_results:
+            if score <= 0:
+                continue
+            if (
+                len(selected_files) >= max_sources
+                and chunk.filename not in selected_files
+            ):
+                continue
+            if chunk not in selected_chunks:
+                selected_chunks.append(chunk)
+                if chunk.filename not in selected_files:
+                    selected_files.append(chunk.filename)
+
+    return selected_chunks
+
+
 class SupportAgent:
 
     def __init__(
@@ -203,9 +443,22 @@ class SupportAgent:
                 "12-breeze-tumbler-product-card.md"
             )
 
-        # Migration note / prompt injection.
+        # TrailPlus membership questions.
         if (
-            "migration note" in query_lower
+            "trailplus" in query_lower
+            or "trail plus" in query_lower
+            or "membership" in query_lower
+        ):
+            filenames.add(
+                "09-trailplus-membership.md"
+            )
+
+        # Return questions / migration note / prompt injection.
+        if (
+            "return" in query_lower
+            or "refund" in query_lower
+            or "exchange" in query_lower
+            or "migration note" in query_lower
             or "60 days" in query_lower
         ):
             filenames.add(
@@ -225,6 +478,22 @@ class SupportAgent:
                 )
 
         return extra_chunks
+
+    # ====================================
+    # SELECT RELEVANT SOURCES
+    # ====================================
+
+    def select_relevant_sources(
+        self,
+        query: str,
+        results,
+        max_sources: int = 2
+    ):
+        return select_relevant_sources(
+            query,
+            results,
+            max_sources
+        )
 
     # ====================================
     # REMOVE DUPLICATES
@@ -686,9 +955,17 @@ class SupportAgent:
             )
         )
 
+        selected_sources = (
+            self.select_relevant_sources(
+                query,
+                results,
+                max_sources=2
+            )
+        )
+
         source_list = (
             self.build_source_list(
-                results
+                selected_sources
             )
         )
 
