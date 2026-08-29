@@ -1,0 +1,6 @@
+openai
+scikit-learn
+numpy
+python-dotenv
+pytest
+google-genai
