@@ -15,7 +15,7 @@ A reliable, grounded, and privacy-preserving Customer Support RAG Agent built fo
 7. [Bug Diary](#bug-diary)
 8. [Known Limitations & Production Roadmap](#known-limitations--production-roadmap)
 9. [AI Tools Disclosure](#ai-tools-disclosure)
-10. [Demo Demonstration](#demo-demonstration)
+10. [Demo Video & Walkthrough](#demo-video--walkthrough)
 
 ---
 
@@ -134,6 +134,10 @@ python -m app.server
 ```
 Open **[http://localhost:8000](http://localhost:8000)** in your browser to interact with the Aster & Row chat interface.
 
+<p align="center">
+  <img src="assets/web_chat_interface.png" alt="Aster & Row Web Chat Interface" width="850" />
+</p>
+
 ---
 
 ## Environment Variables
@@ -213,14 +217,34 @@ The evaluation suite validates 15 official visible test scenarios plus original 
 
 ## AI Tools Disclosure
 
-- **AI Tools Used:** Antigravity AI Coding Assistant (Gemini 3.7 Flash) for code refactoring, evaluation scripting, and test case verification.
-- **Incorrect Suggestion Example:** An initial AI tool suggestion proposed limiting retrieved chunks to 2 for both LLM prompt input and source citation formatting. This led to Bug #1 (stripping critical sections of multi-topic policy documents). The issue was diagnosed and corrected by decoupling LLM prompt context from user-facing source citations.
+- **ChatGPT (OpenAI):** Utilized during the initial phase for conceptual understanding of the problem space, exploring baseline architecture patterns, formulating early prompt drafts, and drafting initial boilerplate code.
+- **Antigravity AI Assistant (Google DeepMind / Gemini 3.7 Flash):** Utilized for deep codebase refactoring, implementing deterministic evaluation assertions, engineering strict prompt-injection defenses and privacy sanitization boundaries, debugging edge cases, and final project polish.
+- **Incorrect / Incomplete AI Suggestion Example:** An initial AI suggestion proposed coupling retrieved chunk selection directly with citation display by limiting retrieved chunks to 2 for both the prompt context and the citations. This caused Bug #1 (stripping critical sections of multi-topic policy documents, such as Canada shipping delivery windows and duty requirements). The issue was diagnosed and resolved by cleanly separating the LLM prompt context (which receives all top deduplicated sections) from the user-facing source citations (limited to top 2 files).
 
 ---
 
-## Demo Demonstration
+## Demo Video & Walkthrough
 
-Below is a walkthrough demonstrating the agent handling knowledge questions with citations, order lookups, privacy defense, and source conflict detection:
+### Web Interface
+<p align="center">
+  <img src="assets/web_chat_interface.png" alt="Aster & Row AI Support Assistant Interface" width="850" />
+</p>
+
+### Video Walkthrough
+The full end-to-end demonstration video covers all required capabilities:
+1. Knowledge-base query with verified Markdown source citations
+2. Multi-turn context persistence
+3. Deterministic order lookup tool
+4. Privacy protection and PII defense
+5. Contradictory source handling and safe human escalation
+6. Automated evaluation suite execution
+
+📹 **Demo Video File:** [Aster & Row AI Support Agent Demo.mp4](assets/Aster%20%26%20Row%20AI%20Support%20Agent%20Demo.mp4)  
+*(Located locally at `assets/Aster & Row AI Support Agent Demo.mp4`)*
+
+---
+
+### Interactive Flow Example
 
 ```text
 [Knowledge Base Question with Citations]
@@ -252,5 +276,3 @@ Sources:
 - 11-product-care.md
 - 12-breeze-tumbler-product-card.md
 ```
-
-*(To record a live video or GIF demonstration, run `python -m app.agent` or execute the evaluation suite with `python -m app.evaluate`.)*
