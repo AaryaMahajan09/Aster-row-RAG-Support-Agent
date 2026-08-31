@@ -288,6 +288,14 @@ concept_patterns = {
         "has been cancelled"
     ],
 
+    "order is cancelled": [
+        "the order is cancelled",
+        "order ord 1004 is cancelled",
+        "ord 1004 is cancelled",
+        "is cancelled",
+        "has been cancelled"
+    ],
+
     "it will not be shipped": [
         "it will not be shipped",
         "will not be shipped",
@@ -757,11 +765,13 @@ def evaluate_test(
         )
 
     # ----------------------------------
-    # PRINT RESULT
+    # ----------------------------------
+    # RETURN RESULT
     # ----------------------------------
 
     return {
         "id": test_id,
+        "category": test_case.get("category", "general"),
         "passed": passed,
         "answer": answer,
         "failures": failures
@@ -782,6 +792,13 @@ def main():
     test_cases = load_test_cases(
         "evaluation/visible-cases.json"
     )
+
+    # Also load custom cases if available
+    try:
+        custom_cases = load_test_cases("evaluation/custom-cases.json")
+        test_cases.extend(custom_cases)
+    except Exception:
+        pass
 
     print(
         f"\nLoaded {len(test_cases)} test cases."
@@ -835,6 +852,29 @@ def main():
                 )
 
         print("-" * 55)
+
+    # ----------------------------------
+    # CATEGORY BREAKDOWN
+    # ----------------------------------
+
+    categories = {}
+    for result in results:
+        cat = result.get("category", "general")
+        if cat not in categories:
+            categories[cat] = {"passed": 0, "total": 0}
+        categories[cat]["total"] += 1
+        if result["passed"]:
+            categories[cat]["passed"] += 1
+
+    print("\n" + "=" * 55)
+    print("CATEGORY BREAKDOWN")
+    print("=" * 55)
+    print(f"{'Category':<28} | {'Pass Rate':<10} | {'Passed/Total'}")
+    print("-" * 55)
+    for cat, data in categories.items():
+        cat_score = (data["passed"] / data["total"] * 100) if data["total"] > 0 else 0
+        cat_name = cat.replace("-", " ").title()
+        print(f"{cat_name:<28} | {cat_score:>6.1f}%    | {data['passed']}/{data['total']}")
 
     # ----------------------------------
     # SUMMARY
