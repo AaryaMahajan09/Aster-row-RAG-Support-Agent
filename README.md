@@ -119,11 +119,20 @@ GEMINI_API_KEY=your_actual_gemini_api_key
 GEMINI_MODEL=gemini-3.5-flash-lite
 ```
 
-### 4. Run the Interactive Agent
+### 4. Run the Agent
 
+You can interact with the agent via **CLI** or via the local **Web Interface**:
+
+#### Option A: Terminal CLI
 ```bash
 python -m app.agent
 ```
+
+#### Option B: Web Chat Interface
+```bash
+python -m app.server
+```
+Open **[http://localhost:8000](http://localhost:8000)** in your browser to interact with the Aster & Row chat interface.
 
 ---
 

@@ -644,6 +644,85 @@ class SupportAgent:
         )
 
     # ====================================
+    # CONVERSATIONAL PLEASANTRIES
+    # ====================================
+
+    def handle_conversational_pleasantry(
+        self,
+        query: str
+    ):
+        q = query.lower().strip(" .!?,:;'\"")
+
+        # Thank you / appreciation
+        thanks_phrases = [
+            "thanks",
+            "thank you",
+            "thank you so much",
+            "thanks a lot",
+            "thanks so much",
+            "many thanks",
+            "thx",
+            "ok thanks",
+            "okay thanks",
+            "great thanks",
+            "perfect thanks",
+            "thank you for your help",
+            "thanks for your help"
+        ]
+        if q in thanks_phrases or (
+            any(w in q for w in ["thank you", "thanks", "thx"])
+            and len(q.split()) <= 4
+            and not any(w in q for w in ["ord-", "order", "return", "policy", "warranty", "ship", "track", "tumbler", "bag", "cancel", "refund"])
+        ):
+            return "You're very welcome! Please let me know if you need help with anything else."
+
+        # Greetings
+        greeting_phrases = [
+            "hello",
+            "hi",
+            "hey",
+            "hi there",
+            "hello there",
+            "good morning",
+            "good afternoon",
+            "good evening"
+        ]
+        if q in greeting_phrases or (
+            any(q == w for w in greeting_phrases)
+        ):
+            return "Hello! How can I help you today? I can assist with return policies, product care guidelines, international shipping, or tracking an order."
+
+        # Farewells
+        farewell_phrases = [
+            "bye",
+            "goodbye",
+            "see you",
+            "have a good day",
+            "have a nice day",
+            "have a great day"
+        ]
+        if q in farewell_phrases:
+            return "Goodbye! Have a wonderful day, and feel free to reach out if you have any more questions."
+
+        # Acknowledgment
+        ack_phrases = [
+            "ok",
+            "okay",
+            "got it",
+            "understood",
+            "cool",
+            "great",
+            "perfect",
+            "sounds good",
+            "alright",
+            "all right"
+        ]
+        if q in ack_phrases:
+            return "Great! Let me know if you need assistance with anything else."
+
+        return None
+
+    # ====================================
     # ORDER RESPONSE
     # ====================================
 
@@ -861,6 +940,17 @@ class SupportAgent:
 
         query_lower = query.lower()
 
+        # --------------------------------
+        # CONVERSATIONAL PLEASANTRIES
+        # --------------------------------
+
+        pleasantry = self.handle_conversational_pleasantry(
+            query
+        )
+
+        if pleasantry:
+            return pleasantry
+
         order_id = self.extract_order_id(
             query
         )
@@ -1045,11 +1135,8 @@ IMPORTANT SAFETY AND GROUNDING RULES:
     - do not silently choose one source
     - recommend human confirmation or the safest interim guidance
 
-16. If the supplied information is insufficient, explicitly say:
-    "The supplied information is insufficient to answer this
-    confidently."
-    Also explicitly recommend:
-    "human confirmation."
+16. If the supplied information is insufficient to answer the question, state:
+    "The supplied information is insufficient to answer this confidently. I recommend contacting customer support for human confirmation."
 
 17. Keep the answer concise and customer-friendly.
 
@@ -1136,6 +1223,10 @@ system rules.
         # --------------------------------
         # ADD SOURCES
         # --------------------------------
+
+        # If the answer indicates insufficient information, do not cite unrelated sources
+        if "insufficient to answer" in answer.lower() or "information is insufficient" in answer.lower():
+            source_list = "Sources:\n- None"
 
         return (
             f"{answer}\n\n"
