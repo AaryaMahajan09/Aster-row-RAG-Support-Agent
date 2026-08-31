@@ -225,13 +225,15 @@ The evaluation suite validates 15 official visible test scenarios plus original 
 
 ## Demo Video & Walkthrough
 
-### Web Interface
+### Web Interface & Video Preview
 <p align="center">
-  <img src="assets/web_chat_interface.png" alt="Aster & Row AI Support Assistant Interface" width="850" />
+  <a href="https://drive.google.com/file/d/1iB0HUXzAVz7xCirpn55m_bcFqkdCwN7p/view?usp=sharing" target="_blank">
+    <img src="assets/web_chat_interface.png" alt="Aster & Row AI Support Assistant Interface" width="850" />
+  </a>
 </p>
 
 ### Video Walkthrough
-The full end-to-end demonstration video covers all required capabilities:
+The full demonstration video covers all required capabilities:
 1. Knowledge-base query with verified Markdown source citations
 2. Multi-turn context persistence
 3. Deterministic order lookup tool
@@ -239,8 +241,8 @@ The full end-to-end demonstration video covers all required capabilities:
 5. Contradictory source handling and safe human escalation
 6. Automated evaluation suite execution
 
-📹 **Demo Video File:** [Aster & Row AI Support Agent Demo.mp4](assets/Aster%20%26%20Row%20AI%20Support%20Agent%20Demo.mp4)  
-*(Located locally at `assets/Aster & Row AI Support Agent Demo.mp4`)*
+▶️ **Watch Online:** **[Google Drive Demo Video (Click to Watch)](https://drive.google.com/file/d/1iB0HUXzAVz7xCirpn55m_bcFqkdCwN7p/view?usp=sharing)**  
+📹 **Repository File:** [assets/Aster & Row AI Support Agent Demo.mp4](assets/Aster%20%26%20Row%20AI%20Support%20Agent%20Demo.mp4)
 
 ---
 
